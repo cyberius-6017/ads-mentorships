@@ -1,5 +1,5 @@
 name: session2_scouting_counter
-description: "A new Flutter project."
+description: "Contador simple con estado (StatefulWidget): la base de todo scouting."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
