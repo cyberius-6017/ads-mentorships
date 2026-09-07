@@ -1,0 +1,5 @@
+# Guía local para Claude Code, no se versiona.
+CLAUDE.md
+
+# Sitio compilado que sirve hosting/server.py; se regenera con ./hosting/build.sh
+/site/

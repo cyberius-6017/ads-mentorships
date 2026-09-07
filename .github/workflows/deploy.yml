@@ -1,0 +1,149 @@
+# Publica las demos en ads.team6017.com desde el runner self-hosted de esta
+# máquina. No usa GitHub Pages ni runners de GitHub: compila con
+# hosting/build.sh (imagen Docker de Flutter) directamente sobre el directorio
+# que sirve el servicio ads-site, así que el sitio queda actualizado apenas
+# termina el job — no hace falta reiniciar nada.
+#
+# Solo recompila las sesiones que cambiaron en el push. Cada sesión es un job
+# aparte, con el nombre de la carpeta, para que en la pestaña Actions se vea de
+# un vistazo cuál se está reconstruyendo.
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      project:
+        description: "Carpeta a recompilar (vacío = solo lo que cambió; 'all' = todo)"
+        required: false
+        default: ""
+
+# Un deploy a la vez: dos builds simultáneos escribirían sobre el mismo site/.
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  # Debe apuntar al mismo directorio que sirve el servicio (SITE_DIR en
+  # hosting/ads-site.service). El workspace del runner NO es el repo que se
+  # sirve, por eso hay que decirlo explícitamente. Se puede sobrescribir con
+  # una variable de repositorio SITE_DIR sin tocar este archivo.
+  SITE_DIR: ${{ vars.SITE_DIR || '/home/macbeath/ads-mentorships/site' }}
+
+jobs:
+  # --- 1) ¿Qué sesiones hay que recompilar? ----------------------------------
+  discover:
+    name: Detectar cambios
+    runs-on: [self-hosted, mentorship]
+    outputs:
+      projects: ${{ steps.pick.outputs.projects }}
+      count: ${{ steps.pick.outputs.count }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # necesitamos historia para diffear contra el push anterior
+
+      - id: pick
+        name: Elegir proyectos
+        env:
+          # Carpetas con pubspec.yaml que NO son una demo publicable.
+          EXCLUDE_DIRS: "template shared packages"
+          BEFORE: ${{ github.event.before }}
+          INPUT_PROJECT: ${{ github.event.inputs.project }}
+        run: |
+          set -euo pipefail
+
+          # Todos los proyectos del repo: cualquier carpeta con pubspec.yaml.
+          mapfile -t all < <(
+            find . -name .git -prune -o -path ./site -prune -o \
+              -mindepth 2 -name pubspec.yaml -print \
+              | sed 's|^\./||; s|/pubspec\.yaml$||' | sort
+          )
+          keep=()
+          for dir in "${all[@]}"; do
+            skip=false
+            for ex in $EXCLUDE_DIRS; do
+              if [ "$dir" = "$ex" ] || [[ "$dir" == "$ex"/* ]]; then skip=true; fi
+            done
+            if [ "$skip" = false ]; then keep+=("$dir"); fi
+          done
+
+          reason=""
+          selected=()
+
+          if [ "$INPUT_PROJECT" = "all" ]; then
+            selected=("${keep[@]}"); reason="ejecución manual: todo"
+          elif [ -n "$INPUT_PROJECT" ]; then
+            selected=("$INPUT_PROJECT"); reason="ejecución manual: $INPUT_PROJECT"
+          elif [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ] \
+               || ! git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            # Rama nueva, force-push, o el commit anterior ya no existe.
+            selected=("${keep[@]}"); reason="sin commit base utilizable: se recompila todo"
+          else
+            changed=$(git diff --name-only "$BEFORE" "${{ github.sha }}")
+            # Ojo: acá va here-string y no `printf ... | grep`. Con pipefail, el
+            # grep -q corta la tubería, printf muere con SIGPIPE y la condición
+            # da falso AUNQUE el patrón haya coincidido: sesiones cambiadas se
+            # saltearían sin aviso, de forma intermitente.
+            #
+            # Un cambio en la infraestructura de build afecta a todas las demos.
+            if grep -qE '^(hosting/|\.github/workflows/)' <<<"$changed"; then
+              selected=("${keep[@]}"); reason="cambió hosting/ o el workflow: se recompila todo"
+            else
+              for dir in "${keep[@]}"; do
+                if grep -q "^$dir/" <<<"$changed"; then
+                  selected+=("$dir")
+                fi
+              done
+              reason="sesiones tocadas por el push"
+            fi
+          fi
+
+          # Salida como JSON para la matriz del job siguiente.
+          # Sin grep intermedio a propósito: con `set -o pipefail`, un grep que no
+          # encuentra nada (o sea, ninguna sesión cambió) tumbaría el step entero.
+          json=$(printf '%s\n' "${selected[@]:-}" | sort -u \
+                 | python3 -c 'import json,sys; print(json.dumps([l.strip() for l in sys.stdin if l.strip()]))')
+          count=$(python3 -c "import json;print(len(json.loads('''$json''')))")
+          echo "projects=$json" >> "$GITHUB_OUTPUT"
+          echo "count=$count"   >> "$GITHUB_OUTPUT"
+
+          # Resumen visible en la portada del run.
+          {
+            echo "## Sesiones a recompilar"
+            echo
+            echo "_${reason}_"
+            echo
+            if [ "$count" -eq 0 ]; then
+              echo "Ninguna: el push no tocó ninguna sesión. No se recompila nada."
+            else
+              python3 -c "import json;[print('- \`%s\`' % p) for p in json.loads('''$json''')]"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # --- 2) Un job por sesión, con el nombre de la carpeta ---------------------
+  build:
+    name: ${{ matrix.project }}
+    needs: discover
+    if: needs.discover.outputs.count != '0'
+    runs-on: [self-hosted, mentorship]
+    strategy:
+      fail-fast: false # una sesión rota no frena a las demás
+      matrix:
+        project: ${{ fromJSON(needs.discover.outputs.projects) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compilar y publicar
+        run: |
+          echo "::notice title=Recompilando::${{ matrix.project }} -> $SITE_DIR/${{ matrix.project }}/"
+          ./hosting/build.sh "${{ matrix.project }}"
+          {
+            echo "### \`${{ matrix.project }}\` publicada"
+            echo
+            echo "https://ads.team6017.com/${{ matrix.project }}/"
+          } >> "$GITHUB_STEP_SUMMARY"
