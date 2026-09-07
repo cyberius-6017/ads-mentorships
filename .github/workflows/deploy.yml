@@ -43,7 +43,7 @@ jobs:
       projects: ${{ steps.pick.outputs.projects }}
       count: ${{ steps.pick.outputs.count }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0 # necesitamos historia para diffear contra el push anterior
 
@@ -136,7 +136,7 @@ jobs:
       matrix:
         project: ${{ fromJSON(needs.discover.outputs.projects) }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Compilar y publicar
         run: |
