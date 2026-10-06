@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:session3_match_scouting_form/widgets/estilos.dart';
+
 // Este archivo tiene UN SOLO widget: el botón que ya usábamos en la
 // sesión 2, pero sacado de main.dart para poder reusarlo.
 //
@@ -52,25 +54,24 @@ class CounterButton extends StatelessWidget {
     return SizedBox(
       height: 54,
       width: double.infinity,
-      // ElevatedButton.icon = ícono + texto en el mismo botón. El ícono
-      // de "+" hace obvio qué pasa al tocarlo, aun sin leer.
-      child: ElevatedButton.icon(
+      // BotonNaranja (de estilos.dart) = ícono + texto, ya vestido de
+      // naranja. El ícono de "+" hace obvio qué pasa al tocarlo, aun sin
+      // leer.
+      child: BotonNaranja(
         // Aquí NO hay setState() ni ninguna variable que cambie.
-        // Simplemente le entregamos a ElevatedButton la función que nos
-        // dieron. Cuando el usuario toca, Flutter llama a onPressed, que
-        // es código que vive en la pantalla papá.
+        // Simplemente le entregamos al botón la función que nos dieron.
+        // Cuando el usuario toca, Flutter llama a onPressed, que es
+        // código que vive en la pantalla papá.
         onPressed: onPressed,
-        icon: const Icon(Icons.add_rounded, size: 24),
+        icon: Icons.add_rounded,
         // El texto tampoco lo decidimos nosotros: viene del papá. Por
         // eso el MISMO widget dice "Autónomo" en un lugar y
         // "Teleoperado" en otro.
-        label: Text(label),
+        label: label,
       ),
     );
-    // ¿Y los colores? No están aquí, y es a propósito. Viven en el
-    // `theme:` del MaterialApp (main.dart). Este botón hereda el estilo
-    // del equipo automáticamente, igual que un jugador se pone el
-    // uniforme sin tener que diseñarlo. Así ningún archivo repite el
-    // mismo naranja escrito a mano.
+    // ¿Y los colores? No están aquí, y es a propósito. Viven en
+    // BotonNaranja, en estilos.dart. Así ningún archivo repite el mismo
+    // naranja escrito a mano.
   }
 }

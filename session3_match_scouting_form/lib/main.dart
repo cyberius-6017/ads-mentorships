@@ -5,22 +5,9 @@ import 'package:flutter/material.dart';
 // que escribimos nosotros en lib/widgets/counter_button.dart.
 // El nombre 'session3_match_scouting_form' es el `name:` del pubspec.yaml.
 import 'package:session3_match_scouting_form/widgets/counter_button.dart';
-
-// ---------------------------------------------------------------------
-// LOS COLORES DEL EQUIPO, EN UN SOLO LUGAR
-// ---------------------------------------------------------------------
-// Son los mismos colores de ads.team6017.com, para que la app se sienta
-// parte de la familia Cyberius. Escribirlos una vez arriba (y no
-// "0xFF006EB6" regado por todo el archivo) es la misma idea que sacar el
-// botón a su propio archivo: si el color cambia, se cambia aquí.
-const Color kAzul = Color(0xFF006EB6); // azul Cyberius: acción principal
-const Color kFondo = Color(0xFFC9EDFF); // azul claro: fondo de la pantalla
-const Color kNaranja = Color(0xFFF96815); // naranja: los botones de contar
-const Color kTinta = Color(0xFF003D63); // azul muy oscuro: el texto
-const Color kTintaSuave = Color(0xFF46708F); // azul apagado: texto secundario
-// Los botones naranjas llevan texto casi negro y no blanco: el blanco
-// sobre naranja se lee mal bajo el sol de las gradas.
-const Color kTintaNaranja = Color(0xFF12293D);
+// Los colores del equipo, los botones naranja y azul, y el estilo de las
+// cajas del formulario (lib/widgets/estilos.dart).
+import 'package:session3_match_scouting_form/widgets/estilos.dart';
 
 // Punto de entrada: lo primero que corre en toda app Flutter.
 void main() {
@@ -37,75 +24,21 @@ class MainApp extends StatelessWidget {
     return MaterialApp(
       title: 'Scouting de Match',
       debugShowCheckedModeBanner: false,
-      // ---------------------------------------------------------------
-      // EL TEMA: el uniforme del equipo
-      // ---------------------------------------------------------------
-      // Todo lo que pongamos aquí lo heredan TODOS los widgets de la app,
-      // por más abajo que estén. Por eso counter_button.dart no tiene ni
-      // un color escrito: se viste solo con lo que definimos aquí.
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: kAzul),
-        scaffoldBackgroundColor: kFondo,
-
-        // Estilo de TODOS los ElevatedButton de la app (o sea: los dos
-        // CounterButton). Uno solo lo va a sobrescribir a propósito: el
-        // de "Guardar", más abajo.
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: kNaranja,
-            foregroundColor: kTintaNaranja,
-            elevation: 0,
-            textStyle: const TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w700,
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
-            ),
-          ),
-        ),
-
-        // Estilo de TODAS las cajas de formulario: el TextField del
-        // número de equipo y el dropdown del rol. Definirlo aquí es lo
-        // que hace que los dos se vean exactamente iguales, que es
-        // justo lo que espera el ojo en un formulario.
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: Colors.white,
-          hintStyle: const TextStyle(color: kTintaSuave),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 16,
-          ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide.none,
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: Color(0x33006EB6), width: 1.5),
-          ),
-          // El borde grueso azul marca dónde está el cursor. Sin esto,
-          // con el teclado abierto no se sabe qué campo se está llenando.
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: kAzul, width: 2),
-          ),
-        ),
-      ),
       home: const MatchScoutingScreen(),
     );
   }
 }
 
-// Esta pantalla es Stateful porque tiene CUATRO cosas que recordar
+// Esta pantalla es Stateful porque tiene TRES cosas que recordar
 // mientras el scouter llena el formulario:
-//   1. el número de equipo que está escribiendo
-//   2. el rol que eligió en el dropdown
-//   3. cuántos elementos anotó en autónomo
-//   4. cuántos anotó en teleoperado
+//   1. el rol que eligió en el dropdown
+//   2. cuántos elementos anotó en autónomo
+//   3. cuántos anotó en teleoperado
 //
-// Importante: los cuatro datos viven AQUÍ, en la pantalla papá. Ninguno
+// (¿Y el número de equipo? El TextField deja escribirlo, pero todavía no
+// tenemos manera de LEERLO desde aquí. Eso es lo primero de la sesión 4.)
+//
+// Importante: los datos viven AQUÍ, en la pantalla papá. Ninguno
 // vive adentro del botón ni adentro del dropdown. Esa es la idea grande
 // de la sesión y se llama "lifting state up" (subir el estado): el dato
 // vive en el widget más arriba que necesite leerlo.
@@ -118,23 +51,7 @@ class MatchScoutingScreen extends StatefulWidget {
 
 class _MatchScoutingScreenState extends State<MatchScoutingScreen> {
   // ---------------------------------------------------------------
-  // 1) EL CONTROLLER DEL CAMPO DE TEXTO
-  // ---------------------------------------------------------------
-  // Un TextField dibuja la cajita, pero por sí solo no nos deja LEER lo
-  // que el usuario escribió. El TextEditingController es el que guarda
-  // ese texto y nos lo presta cuando lo pedimos con `.text`.
-  //
-  // Es exactamente la misma idea del StatefulWidget de la sesión 2:
-  // alguien tiene que RECORDAR algo entre un build y el siguiente. El
-  // contador lo recuerda en una variable `int`; el campo de texto lo
-  // recuerda en este controller.
-  //
-  // `final` porque el controller en sí nunca se cambia por otro; lo que
-  // cambia es el texto que tiene adentro.
-  final TextEditingController _equipoController = TextEditingController();
-
-  // ---------------------------------------------------------------
-  // 2) EL VALOR DEL DROPDOWN
+  // 1) EL VALOR DEL DROPDOWN
   // ---------------------------------------------------------------
   // La lista de opciones del menú. Es `const` porque nunca cambia: son
   // siempre los mismos tres roles.
@@ -146,33 +63,13 @@ class _MatchScoutingScreenState extends State<MatchScoutingScreen> {
   String _rolSeleccionado = _roles.first;
 
   // ---------------------------------------------------------------
-  // 3) LOS DOS CONTADORES
+  // 2) LOS DOS CONTADORES
   // ---------------------------------------------------------------
   // Dos variables distintas, cada una con su propio número. Las van a
   // mover dos botones que son EL MISMO widget (CounterButton), solo que
   // con distinto label y distinto callback.
   int _puntosAutonomo = 0;
   int _puntosTeleoperado = 0;
-
-  // dispose() corre cuando esta pantalla se destruye (por ejemplo, si
-  // navegamos a otra pantalla o cerramos la app). Es el "apaga la luz
-  // al salir" de Flutter.
-  //
-  // El controller reserva memoria y se queda escuchando el teclado. Si
-  // no lo liberamos, esa memoria sigue ocupada aunque la pantalla ya no
-  // exista: eso es una fuga de memoria (memory leak). En una app
-  // chiquita no se nota; en una app de scouting que abre y cierra la
-  // pantalla en cada match, sí.
-  //
-  // Regla simple para recordar: TODO controller que creas, lo liberas
-  // en dispose().
-  @override
-  void dispose() {
-    _equipoController.dispose();
-    // super.dispose() al final: primero limpiamos lo nuestro, después
-    // dejamos que Flutter limpie lo suyo.
-    super.dispose();
-  }
 
   // Estas dos funciones son las que le vamos a PRESTAR a los botones.
   // El botón no sabe qué hacen; solo las llama cuando lo tocan.
@@ -190,126 +87,15 @@ class _MatchScoutingScreenState extends State<MatchScoutingScreen> {
     });
   }
 
-  // Junta los cuatro datos y los muestra en un diálogo.
-  // Fíjate que aquí podemos leer los cuatro sin problema: TODOS viven en
-  // este mismo State. Si el contador viviera adentro del botón, esta
-  // función no tendría manera de saber en qué número va.
-  void _guardar() {
-    // Baja el teclado antes de mostrar el diálogo; si no, el resumen
-    // aparece encima del teclado y se ve a medias.
-    FocusScope.of(context).unfocus();
-
-    // `.text` es lo que el usuario escribió en el TextField, leído desde
-    // el controller. Si no escribió nada mostramos una rayita, para que
-    // el resumen no aparezca con un hueco raro.
-    final String equipo = _equipoController.text.isEmpty
-        ? '—'
-        : _equipoController.text;
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: const Text(
-            'Reporte del match',
-            style: TextStyle(color: kTinta, fontWeight: FontWeight.w800),
-          ),
-          content: Column(
-            // mainAxisSize.min: que el diálogo sea del alto de su
-            // contenido y no trate de ocupar toda la pantalla.
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Los cuatro datos, cada uno en su renglón. _filaResumen()
-              // está más abajo: es una función que arma un renglón, así
-              // no escribimos el mismo Row cuatro veces. (Misma idea que
-              // el CounterButton, en su versión más chiquita.)
-              _filaResumen('Equipo', equipo),
-              _filaResumen('Rol', _rolSeleccionado),
-              _filaResumen('Autónomo', '$_puntosAutonomo'),
-              _filaResumen('Teleoperado', '$_puntosTeleoperado'),
-              const SizedBox(height: 14),
-              // Los dos contadores sumados: otro dato que solo se puede
-              // calcular porque ambos viven en el mismo lugar.
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  color: kFondo,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Total del match',
-                      style: TextStyle(
-                        color: kTinta,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    Text(
-                      '${_puntosAutonomo + _puntosTeleoperado}',
-                      style: const TextStyle(
-                        color: kTinta,
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              // Navigator.pop() cierra el diálogo que está encima.
-              onPressed: () => Navigator.pop(context),
-              style: TextButton.styleFrom(foregroundColor: kAzul),
-              child: const Text('Cerrar'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  // Un renglón "etiqueta ..... valor" del resumen. No es un widget
-  // aparte: es solo una función que devuelve widgets, suficiente para
-  // algo que se usa nada más dentro de este archivo.
-  Widget _filaResumen(String etiqueta, String valor) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            etiqueta,
-            style: const TextStyle(color: kTintaSuave, fontSize: 15),
-          ),
-          Text(
-            valor,
-            style: const TextStyle(
-              color: kTinta,
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // Por ahora no hace nada. Fíjate que desde aquí podríamos leer el rol
+  // y los contadores sin problema: TODOS viven en este mismo State. En la
+  // sesión 4 aquí vamos a juntarlos en un reporte.
+  void _guardar() {}
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: kFondo,
       // SingleChildScrollView: cuando el teclado se abre para escribir el
       // número de equipo, la pantalla se hace "más chica" y el contenido
       // ya no cabe. Sin esto, Flutter pinta la franja amarilla y negra de
@@ -380,29 +166,26 @@ class _MatchScoutingScreenState extends State<MatchScoutingScreen> {
                     // ---------------------------------------------------
                     _etiqueta('Equipo scouteado'),
                     const SizedBox(height: 8),
+                    // Por ahora el TextField solo dibuja la cajita: se
+                    // puede escribir en ella, pero nosotros todavía no
+                    // podemos leer lo que escribió el usuario.
                     TextField(
-                      // Aquí conectamos la cajita con su memoria. Sin esta
-                      // línea el usuario podría escribir, pero nosotros
-                      // nunca podríamos leer lo que escribió.
-                      controller: _equipoController,
                       // Le pedimos al celular que abra el teclado numérico:
                       // los números de equipo de FRC son números.
                       keyboardType: TextInputType.number,
+                      cursorColor: kAzul,
                       style: const TextStyle(
                         color: kTinta,
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
                       ),
-                      decoration: const InputDecoration(
+                      // La cajita (fondo, borde, esquinas) viene de
+                      // decoracionCampo(), en estilos.dart. Aquí solo
+                      // decimos lo que cambia: el hint y el "#" fijo a la
+                      // izquierda, que deja claro que va un número.
+                      decoration: decoracionCampo(
                         hintText: '6017',
-                        // El "#" fijo a la izquierda deja claro, sin
-                        // explicar nada, que ahí va un número de equipo.
                         prefixText: '# ',
-                        prefixStyle: TextStyle(
-                          color: kTintaSuave,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                        ),
                       ),
                     ),
 
@@ -414,12 +197,12 @@ class _MatchScoutingScreenState extends State<MatchScoutingScreen> {
                     _etiqueta('Rol del robot'),
                     const SizedBox(height: 8),
                     // InputDecorator es la "cajita" del TextField sin el
-                    // TextField adentro. La usamos para que el dropdown
-                    // herede exactamente el mismo borde, relleno y esquinas
-                    // que definimos en el tema, y los dos campos se vean
-                    // como hermanos y no como dos inventos distintos.
+                    // TextField adentro. Con la misma decoracionCampo()
+                    // el dropdown lleva exactamente el mismo borde,
+                    // relleno y esquinas, y los dos campos se ven como
+                    // hermanos y no como dos inventos distintos.
                     InputDecorator(
-                      decoration: const InputDecoration(),
+                      decoration: decoracionCampo(),
                       // El dropdown trae por defecto una rayita subrayada
                       // que aquí sobra, porque ya tenemos el borde.
                       child: DropdownButtonHideUnderline(
@@ -434,6 +217,7 @@ class _MatchScoutingScreenState extends State<MatchScoutingScreen> {
                           // con el contador.
                           value: _rolSeleccionado,
                           isExpanded: true,
+                          dropdownColor: Colors.white,
                           borderRadius: BorderRadius.circular(14),
                           icon: const Icon(
                             Icons.expand_more_rounded,
@@ -551,26 +335,12 @@ class _MatchScoutingScreenState extends State<MatchScoutingScreen> {
                     // ---------------------------------------------------
                     SizedBox(
                       height: 56,
-                      child: ElevatedButton.icon(
-                        // Este es el único botón que NO usa el naranja del
-                        // tema: se viste de azul a propósito. Los naranjas
-                        // se tocan muchas veces durante el match; este se
-                        // toca una sola vez, al final, y conviene que no se
-                        // confunda con los otros.
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: kAzul,
-                          foregroundColor: Colors.white,
-                          textStyle: const TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w700,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                        ),
+                      // BotonAzul vive en estilos.dart: azul a propósito,
+                      // para que no se confunda con los naranjas de contar.
+                      child: BotonAzul(
+                        label: 'Guardar reporte',
+                        icon: Icons.assignment_turned_in_rounded,
                         onPressed: _guardar,
-                        icon: const Icon(Icons.assignment_turned_in_rounded),
-                        label: const Text('Guardar reporte'),
                       ),
                     ),
                   ],

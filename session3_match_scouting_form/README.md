@@ -8,8 +8,8 @@ construidos encima de lo que ya sabes (`StatefulWidget` y `setState()`):
 
 1. **Composición de widgets**: sacar el botón a su propio archivo y usarlo
    dos veces.
-2. **`TextField` + `TextEditingController`**: capturar texto que escribe
-   el usuario.
+2. **`TextField`**: la cajita donde el usuario escribe. (Leer lo que
+   escribió, con un `TextEditingController`, es lo primero de la sesión 4.)
 3. **`DropdownButton`**: elegir una opción de una lista.
 
 ## ¿Por qué esta app y no otra cosa?
@@ -63,11 +63,9 @@ Flutter y no requiere ningún paquete: con `setState()` alcanza.
 
 La misma idea aplica a los otros dos widgets nuevos:
 
-- El **`TextField`** tampoco recuerda por su cuenta lo que escribiste: lo
-  recuerda un `TextEditingController` que creamos nosotros y que
-  liberamos en `dispose()`. Es un objeto que reserva memoria; si no lo
-  liberas al salir, esa memoria se queda ocupada (una *fuga de memoria*).
-  Regla simple: **todo controller que creas, lo liberas en `dispose()`**.
+- El **`TextField`** deja escribir, pero por sí solo no nos deja *leer*
+  lo que escribiste. Para eso hace falta un `TextEditingController`, que
+  vemos en la sesión 4.
 - El **`DropdownButton`** tampoco recuerda cuál opción elegiste: solo
   muestra lo que le pasamos en `value:`. La memoria es nuestra variable
   `_rolSeleccionado`, y se actualiza en `onChanged` con `setState()`.
@@ -108,8 +106,8 @@ La misma idea aplica a los otros dos widgets nuevos:
    ```
 
 4. Escribe un número de equipo, elige un rol, toca los dos botones
-   naranjas unas cuantas veces y dale a "Guardar reporte": el resumen
-   junta los cuatro datos.
+   naranjas unas cuantas veces. El botón de "Guardar reporte" todavía
+   no hace nada (`_guardar()` está vacía): llenarla es la sesión 4.
 
 También puedes correr las pruebas, que verifican justamente que cada
 botón mueve **solo** su propio contador:
@@ -124,20 +122,23 @@ flutter test
 session3_match_scouting_form/
 ├── android/, ios/, linux/, macos/, windows/, web/  # generado por Flutter
 ├── lib/
-│   ├── main.dart                 # colores del equipo, tema y MatchScoutingScreen
+│   ├── main.dart                 # MatchScoutingScreen: los datos y la pantalla
 │   └── widgets/
-│       └── counter_button.dart   # el botón reusable, sin estado propio
+│       ├── counter_button.dart   # el botón reusable, sin estado propio
+│       └── estilos.dart          # colores, BotonNaranja, BotonAzul y la cajita de los campos
 ├── test/
 │   └── widget_test.dart
 ├── pubspec.yaml
 └── README.md                     # este archivo
 ```
 
-Dos archivos, dos responsabilidades: `main.dart` sabe **qué datos hay**,
-`counter_button.dart` sabe **cómo se ve un botón de contar**. Los colores
-del equipo están definidos una sola vez, arriba de `main.dart`, y se
-reparten a toda la app por el `theme:` del `MaterialApp`; por eso el
-archivo del botón no tiene ni un color escrito a mano.
+Cada archivo, una responsabilidad: `main.dart` sabe **qué datos hay**,
+`counter_button.dart` sabe **qué hace un botón de contar**, y
+`estilos.dart` sabe **cómo se ve todo**: los colores del equipo, los
+botones naranja y azul, y la cajita blanca de los campos
+(`decoracionCampo()`), que comparten el `TextField` y el dropdown. Los
+colores están escritos una sola vez, ahí; ningún otro archivo repite el
+mismo naranja a mano.
 
 ## Para experimentar
 
@@ -153,18 +154,12 @@ reload):
   que abrir `counter_button.dart`, algo se copió de más.
 - **Quita el `onPressed:` al usar `CounterButton`** y mira qué pasa: el
   editor marca error *antes* de correr la app, porque el parámetro es
-  `required`. Ahora prueba lo contrario: déjalo pero pásale `null` (para que Dart te
-  deje, en `counter_button.dart` el tipo tiene que pasar de
-  `VoidCallback` a `VoidCallback?` y perder el `required`). El botón se dibuja **gris y no
+  `required`. Ahora prueba lo contrario: déjalo pero pásale `null` (para
+  que Dart te deje, el tipo de `onPressed` tiene que pasar de
+  `VoidCallback` a `VoidCallback?` y perder el `required`, tanto en
+  `CounterButton` como en `BotonNaranja`). El botón se dibuja **gris y no
   responde**: así avisa Flutter que un botón sin acción está deshabilitado.
   Es un buen recordatorio de que el botón no hace nada por sí solo.
-- **Valida el número de equipo**: que "Guardar reporte" no muestre el
-  resumen si el campo está vacío. En `_guardar()`, antes del diálogo,
-  pregunta `if (_equipoController.text.isEmpty)` y muestra un aviso con
-  `ScaffoldMessenger.of(context).showSnackBar(...)`. Cuando eso funcione,
-  intenta lo más difícil: que el campo se ponga rojo con un mensaje
-  debajo (pista: una variable `String? _errorEquipo` en el State, pasada
-  a `errorText:` del `InputDecoration`, y actualizada con `setState()`).
 - **Cambia los roles** de la lista `_roles` por alianzas ("Alianza Roja",
   "Alianza Azul") o por lo que necesite el equipo esta temporada. Fíjate
   que no hay que tocar nada más: el menú se arma solo a partir de la
