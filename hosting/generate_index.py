@@ -18,7 +18,7 @@ SITE_TITLE = "Mentorías Flutter"
 SITE_TAGLINE = "Cada sesión es un proyecto Flutter completo. Toca una para abrir la demo, o lee el README para entender qué enseña."
 
 # Palabras que el title-case normal arruinaría ("Ui" -> "UI").
-ACRONYMS = {"ui", "ux", "api", "http", "io", "sdk", "cli", "db", "ai", "ml", "qr"}
+ACRONYMS = {"ui", "ux", "api", "rest", "http", "io", "sdk", "cli", "db", "ai", "ml", "qr"}
 
 # Descripciones que trae `flutter create` y que no aportan nada en una tarjeta.
 BOILERPLATE = {"a new flutter project.", "a new flutter project"}
